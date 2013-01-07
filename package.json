@@ -1,0 +1,31 @@
+{
+    "name": "nodeunit-b",
+    "version": "1.0.0",
+    "author": "nathaniel k smith <nathanielksmith@gmail.com>",
+    "description": "easily test browser javascript with nodeunit",
+    "main": "./index.js",
+    "repository": {
+        "type":"git",
+        "url": "https://github.com/nathanielksmith/nodeunit-b.git"
+    },
+    "keywords": [
+        "cli",
+        "testing",
+        "nodeunit",
+        "browser",
+        "tests"
+    ],
+    "dependencies": {
+        "jsdom": ">=0.2.15",
+        "underscore": ">=1.3.3"
+    },
+    "devDependencies": {
+        "akeley": ">=0.2.0",
+        "rewire": ">=1.0.3",
+        "underscore": ">=1.3.3"
+    },
+    "license": "MIT",
+    "engines": {
+        "node":">=0.8"
+    }
+}
