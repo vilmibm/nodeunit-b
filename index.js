@@ -44,8 +44,10 @@ b.html = function(html) { b._html = html; };
 
 b._reqs = [];
 b.require = function(reqs) {
+    if (_(reqs).isString()) {
+        reqs = [reqs];
+    }
     _(reqs).each(function(req) {
-        // if relative, prepend __dirname
         if (!req.match(new RegExp('^'+path.sep))) {
             req = path.join(b._root, req);
         }
