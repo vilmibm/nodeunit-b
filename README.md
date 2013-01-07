@@ -6,6 +6,7 @@ nodeunit-b provides a convenient interface around jsdom, bootstrapping
 front-end code with a DOM and allowing you to unit test it with nothing more
 than node and a few libraries (ie, no browser).
 
+
 ## Example
 
         var b = require('nodeunit-b');
@@ -45,6 +46,11 @@ than node and a few libraries (ie, no browser).
                 test.done();
             }
         });
+
+
+## Install
+
+        npm install nodeunit-b
 
 
 ## API
