@@ -1,7 +1,48 @@
 var path = require('path');
+var m = require('akeley');
+var rewire = require('rewire');
 var _ = require('underscore');
 
+
+
 exports.test_wrapping = {
+    setUp: function(cb) {
+        this.b = rewire(path.join(__dirname, '../index.js'));
+        cb();
+    },
+
+    test_just_tests: function(test) {
+        var mock_test = m.create_mock();
+        var mock_dom = m.create_mock();
+        var mock_env = m.create_func({func:function(html, reqs, cb) {
+            cb(null, mock_dom);
+        }});
+        this.b.__set__('jsdom', { env: mock_env, });
+        var test_func_0 = m.create_func();
+        var test_func_1 = m.create_func();
+        var test_obj = {
+            test_func_0: test_func_0,
+            test_func_1: test_func_1
+        };
+
+        var computed_test_obj = this.b(test_obj);
+
+        test.ok(_(computed_test_obj).has('setUp'), 'setUp added');
+        test.ok(_(computed_test_obj).has('tearDown'), 'tearDown added');
+
+        var tearDown = computed_test_obj.tearDown;
+        computed_test_obj.setUp(function() {
+            test.equal(computed_test_obj.window, mock_dom, 'see mock_dom');
+            computed_test_obj.test_func_0(mock_test);
+            test.equal(test_func_0.calls, 1, 'see 0th func called');
+            test.deepEqual(test_func_0.args[0], [mock_test, mock_dom], 'see proper args');
+            test.done();
+        });
+    },
+
+    test_with_setUp_tearDown: function(test) {
+        test.done();
+    },
 };
 
 exports.test_setters = {
