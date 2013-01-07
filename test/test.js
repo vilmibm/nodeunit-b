@@ -36,12 +36,55 @@ exports.test_wrapping = {
             computed_test_obj.test_func_0(mock_test);
             test.equal(test_func_0.calls, 1, 'see 0th func called');
             test.deepEqual(test_func_0.args[0], [mock_test, mock_dom], 'see proper args');
+            computed_test_obj.test_func_1(mock_test);
+            test.equal(test_func_1.calls, 1, 'see 0th func called');
+            test.deepEqual(test_func_1.args[0], [mock_test, mock_dom], 'see proper args');
             test.done();
         });
     },
 
     test_with_setUp_tearDown: function(test) {
-        test.done();
+        var mock_test = m.create_mock();
+        var mock_dom = m.create_mock();
+        var mock_env = m.create_func({func:function(html, reqs, cb) {
+            cb(null, mock_dom);
+        }});
+        this.b.__set__('jsdom', { env: mock_env, });
+        var test_func_0 = m.create_func();
+        var test_func_1 = m.create_func();
+        var test_setup = m.create_func({func:function(cb){cb();}});
+        var test_teardown = m.create_func({func:function(cb){cb();}});
+        var test_obj = {
+            setUp: test_setup,
+            tearDown: test_teardown,
+            test_func_0: test_func_0,
+            test_func_1: test_func_1
+        };
+
+        var computed_test_obj = this.b(test_obj);
+
+        test.ok(_(computed_test_obj).has('setUp'), 'setUp retained');
+        test.ok(_(computed_test_obj).has('tearDown'), 'tearDown retained');
+
+        computed_test_obj.setUp(function() {
+            test.equal(test_setup.calls, 1, 'see call to test setup');
+            test.equal(computed_test_obj.window, mock_dom, 'see mock_dom');
+            test.equal(test_setup.args[0][1], mock_dom, 'see mock_dom in setup');
+
+            computed_test_obj.test_func_0(mock_test);
+            test.equal(test_func_0.calls, 1, 'see 0th func called');
+            test.deepEqual(test_func_0.args[0], [mock_test, mock_dom], 'see proper args');
+
+            computed_test_obj.test_func_1(mock_test);
+            test.equal(test_func_1.calls, 1, 'see 0th func called');
+            test.deepEqual(test_func_1.args[0], [mock_test, mock_dom], 'see proper args');
+
+            computed_test_obj.tearDown(function(){});
+            test.equal(test_teardown.calls, 1, 'see call to test teardown');
+            test.equal(test_teardown.args[0][1], mock_dom, 'see mock_dom in teardown');
+
+            test.done();
+        });
     },
 };
 
