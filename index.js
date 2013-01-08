@@ -37,7 +37,12 @@ var b = function(tests) {
 };
 
 b._root = __dirname;
-b.setRequireRoot = function(root) { b._root = root; };
+b.setRequireRoot = function() {
+    var args = _.toArray(arguments);
+    b._root = path.join.apply(path, args);
+
+    return b;
+};
 
 b._html = '<html><head></head><body></body></html>';
 b.html = function(html) { b._html = html; };
