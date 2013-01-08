@@ -105,6 +105,9 @@ Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 
 ## Changelog
 
+1.1.0
+ * syntax checking
+
 1.0.1
  * slight improvement to setRequireRoot.
  * fluent interface
