@@ -4,11 +4,50 @@ var rewire = require('rewire');
 var _ = require('underscore');
 
 
-
 exports.test_wrapping = {
     setUp: function(cb) {
         this.b = rewire(path.join(__dirname, '../index.js'));
         cb();
+    },
+
+    test_syntax_check_ok: function(test) {
+        var b = this.b;
+        var tests = {};
+        var mock_fs = {
+            readFileSync: m.create_func({
+                return_value: {
+                    toString: m.create_func({return_value: 'var a = function() {};'})
+                }
+            })
+        };
+        b.__set__('fs', mock_fs);
+        b._reqs = ['bogus', 'yup'];
+        test.doesNotThrow(function() {
+            b(tests);
+        });
+        test.equal(mock_fs.readFileSync.calls, 2, 'read two files');
+
+        test.done();
+    },
+
+    test_syntax_check_fail: function(test) {
+        var b = this.b;
+        var tests = {};
+        var mock_fs = {
+            readFileSync: m.create_func({
+                return_value: {
+                    toString: m.create_func({return_value: 'var a = funtion() {};'})
+                }
+            })
+        };
+        b.__set__('fs', mock_fs);
+        b._reqs = ['bogus', 'yup'];
+        test.throws(function() {
+            b(tests);
+        });
+        test.equal(mock_fs.readFileSync.calls, 1, 'read one file');
+
+        test.done();
     },
 
     test_just_tests: function(test) {

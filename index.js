@@ -1,12 +1,34 @@
 var path = require('path');
+var fs = require('fs');
+var vm = require('vm');
+
 var jsdom = require('jsdom');
 var _ = require('underscore');
 
-var b = function(tests) {
+var b = function(opts, tests) {
+    if (arguments.length == 1) {
+        tests = opts;
+        opts = {
+            syntaxCheck: true
+        }
+    }
     var setUp = tests.setUp || function(cb) { cb() };
     var tearDown = tests.tearDown || function(cb) { cb() };
     var html = b._html;
     var reqs = b._reqs;
+
+    // preprocess local reqs to check for syntax errors
+    if (opts.syntaxCheck) {
+        _(reqs).each(function(filename) {
+            var code = fs.readFileSync(filename).toString();
+
+            try {
+                vm.createScript(code);
+            } catch (e) {
+                throw 'Syntax error in local file: ' + filename + ': ' + e;
+            }
+        });
+    }
 
     tests.setUp = function(cb) {
         var testcase = this;
