@@ -45,7 +45,11 @@ b.setRequireRoot = function() {
 };
 
 b._html = '<html><head></head><body></body></html>';
-b.html = function(html) { b._html = html; };
+b.html = function(html) {
+    b._html = html;
+
+    return b;
+};
 
 b._reqs = [];
 b.require = function(reqs) {
@@ -58,6 +62,8 @@ b.require = function(reqs) {
         }
         b._reqs.push(req);
     });
+
+    return b;
 };
 
 
