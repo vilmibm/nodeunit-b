@@ -11,9 +11,9 @@ than node and a few libraries (ie, no browser).
 
         var b = require('nodeunit-b');
 
-        // relative to test file. The top level of your front-end library file
-        directory. Can be absolute, but that is probably unwise.
-        b.setRequireRoot('../../');
+        // you'll want to use __dirname to pin root relative to your test file.
+        // arguments to setRequireRoot are run through path.join.
+        b.setRequireRoot(__dirname, '../../');
 
         // front-end dependencies to require and inject into the DOM.
         b.require([
@@ -93,6 +93,16 @@ Inject a dependency into the DOM.
 Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 
         <html><head></head><body></body></html>
+
+## Changelog
+
+1.0.1
+ * slight improvement to setRequireRoot.
+ * fluent interface
+ * doc clarification
+
+1.0.0
+ * it works
 
 ## Author
 
