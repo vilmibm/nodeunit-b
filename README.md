@@ -18,6 +18,7 @@ than node and a few libraries (ie, no browser).
         // front-end dependencies to require and inject into the DOM.
         b.require([
             // relative to where you set require root
+            // Note that these files will be checked for syntax errors.
             'jquery.js',
             'underscore.js',
             'lib_i_want_to_test.js' // provides, say, window.myLib
@@ -58,9 +59,17 @@ than node and a few libraries (ie, no browser).
 **b**
 
         exports.test_object = b(test_object);
+        exports.test_object = b(opts, test_object);
 
 The primary function. This produces a nodeunit test object that will provide a
 DOM to setUp, tearDown, and test functions (see above code example).
+
+Currently the only supported option is `syntaxCheck`. Setting it to false will
+disable the automatic syntax checking of your require()d files. For example,
+
+        exports.test_foo = b({syntaxCheck:false}, {
+            test_bar: function(test) { }
+        });
 
 **setRequireRoot**
 
