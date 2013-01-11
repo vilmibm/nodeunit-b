@@ -12,8 +12,13 @@ var b = function(opts, tests) {
             syntaxCheck: true
         }
     }
+
+    // This is a bad approach; you need a shutDown-equiv method to clean up provides...
     var setUp = tests.setUp || function(cb) { cb() };
-    var tearDown = tests.tearDown || function(cb) { cb() };
+    var tearDown = tests.tearDown || function(cb) {
+        b.setProvides([]);
+        cb()
+    };
     var html = b._html;
     var reqs = b._reqs;
 
@@ -34,12 +39,12 @@ var b = function(opts, tests) {
         var testcase = this;
         jsdom.env(html, reqs, function(err, window) {
             testcase.window = window;
-            setUp.call(testcase, cb, window);
+            setUp.call(testcase, cb, window, b);
         });
     };
 
     tests.tearDown = function(cb) {
-        tearDown.call(this, cb, this.window);
+        tearDown.call(this, cb, this.window, b);
     };
 
     // set up test methods
@@ -50,13 +55,28 @@ var b = function(opts, tests) {
         })
         .each(function(funcName) {
             var func = tests[funcName];
+            var args = [test, this.window];
+            _(b._provides).each(function(prop) {
+                args.push(this.window[prop]);
+            });
             tests[funcName] = function(test) {
-                return func.call(this, test, this.window);
+                return func.apply(this, args);
             };
         });
 
     return tests;
 };
+
+b.provide = function() {
+    var props = _(arguments).toArray();
+    b._provides.concat(props);
+
+    return b;
+};
+b.setProvides = function(propertyList) {
+    b._provides = [];
+};
+b._provides = [];
 
 b._root = __dirname;
 b.setRequireRoot = function() {
