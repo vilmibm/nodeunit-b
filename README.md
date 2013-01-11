@@ -26,20 +26,25 @@ than node and a few libraries (ie, no browser).
 
         // wrap your test object
         exports.test_all_the_things = b({
-            setUp: function(cb, b) {
+            setUp: function(cb, w, b) {
+                // w is a window object with a document attached
+                // b is still b
+
                 // mock out jquery.ajax
-                b.$.ajax = function() { };
+                w.$.ajax = function() { };
+                // make these conveniently available to tests
+                w.provide('$', '_', 'myLib');
                 cb();
             },
-            tearDown: function(cb, b) [
-                // another chance to mutate b
+            tearDown: function(cb, w, b) [
+                // another chance to mutate b, w
+                // (though w will be reset in setUp)
                 cb();
             },
-            test_thing: function(test, b) {
-                var $ = b.$;
+            test_thing: function(test, w, $, _, myLib) {
                 $('<span/>').appendTo('body').addClass('foo');
 
-                b.myLib.fooToBar();
+                myLib.fooToBar();
 
                 test.ok($('span').hasClass('bar'), 'we set the class');
                 test.ok(!$('span').hasClass('foo'), 'and removed the old one');
@@ -103,7 +108,26 @@ Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 
         <html><head></head><body></body></html>
 
+**provide**
+
+        b.provide('$', '_');
+
+Called within a setUp. Makes the named properties of window available as named
+parameters to test functions. If you've called `b.provide('$', '_', 'myLib');
+in your test object's setUp then you can write a test function like so:
+
+        test_foo: function(test, w, $, _, myLib) {
+            // $, _, myLib are all in scope for this test.
+        }
+
+Be careful of masking, say, a nodejs underscore running in your tests vs. a
+window._ running in your front-end code.
+
 ## Changelog
+
+2.0.0
+ * `provide` feature
+ * backwards compat brokenish, hence major version
 
 1.1.0
  * syntax checking
