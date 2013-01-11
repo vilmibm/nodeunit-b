@@ -13,12 +13,8 @@ var b = function(opts, tests) {
         }
     }
 
-    // This is a bad approach; you need a shutDown-equiv method to clean up provides...
     var setUp = tests.setUp || function(cb) { cb() };
-    var tearDown = tests.tearDown || function(cb) {
-        b.setProvides([]);
-        cb()
-    };
+    var tearDown = tests.tearDown || function(cb) { cb() };
     var html = b._html;
     var reqs = b._reqs;
 
@@ -44,7 +40,13 @@ var b = function(opts, tests) {
     };
 
     tests.tearDown = function(cb) {
-        tearDown.call(this, cb, this.window, b);
+        var wrapped_cb = function() {
+            // clear provides each time through so they're clear after the last
+            // run.
+            b.setProvides([]);
+            cb();
+        };
+        tearDown.call(this, wrapped_cb, this.window, b);
     };
 
     // set up test methods
@@ -55,12 +57,11 @@ var b = function(opts, tests) {
         })
         .each(function(funcName) {
             var func = tests[funcName];
-            var args = [test, this.window];
-            _(b._provides).each(function(prop) {
-                args.push(this.window[prop]);
-            });
             tests[funcName] = function(test) {
-                return func.apply(this, args);
+                var w = this.window;
+                var args = [test, w];
+                var provide_args = b.getProvides().map(function(p) { return w[p] });
+                return func.apply(this, args.concat(provide_args));
             };
         });
 
@@ -69,16 +70,19 @@ var b = function(opts, tests) {
 
 b.provide = function() {
     var props = _(arguments).toArray();
-    b._provides.concat(props);
+    b._provides = b._provides.concat(props);
 
     return b;
 };
+b.getProvides = function() {
+    return b._provides;
+};
 b.setProvides = function(propertyList) {
-    b._provides = [];
+    b._provides = propertyList;
 };
 b._provides = [];
 
-b._root = __dirname;
+b._root = './';
 b.setRequireRoot = function() {
     var args = _.toArray(arguments);
     b._root = path.join.apply(path, args);

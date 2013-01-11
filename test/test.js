@@ -115,7 +115,7 @@ exports.test_wrapping = {
             test.deepEqual(test_func_0.args[0], [mock_test, mock_dom], 'see proper args');
 
             computed_test_obj.test_func_1(mock_test);
-            test.equal(test_func_1.calls, 1, 'see 0th func called');
+            test.equal(test_func_1.calls, 1, 'see 1st func called');
             test.deepEqual(test_func_1.args[0], [mock_test, mock_dom], 'see proper args');
 
             computed_test_obj.tearDown(function(){});
@@ -125,11 +125,64 @@ exports.test_wrapping = {
             test.done();
         });
     },
+
+    test_with_provides: function(test) {
+        var b = this.b;
+        var mock_test = m.create_mock();
+        var mock_dom = m.create_mock();
+        var mock_env = m.create_func({func:function(html, reqs, cb) {
+            cb(null, mock_dom);
+        }});
+        mock_dom.hi = 'there';
+        mock_dom.you = 'guys';
+        b.__set__('jsdom', { env: mock_env, });
+        var test_func_0 = m.create_func();
+        var test_func_1 = m.create_func();
+        var test_setup = m.create_func({func:function(cb, w, b){
+            b.provide('hi', 'you');
+            cb();
+        }});
+        var test_teardown = m.create_func({func:function(cb){cb();}});
+        var test_obj = {
+            setUp: test_setup,
+            tearDown: test_teardown,
+            test_func_0: test_func_0,
+            test_func_1: test_func_1
+        };
+
+        var computed_test_obj = b(test_obj);
+
+        test.ok(_(computed_test_obj).has('setUp'), 'setUp retained');
+        test.ok(_(computed_test_obj).has('tearDown'), 'tearDown retained');
+
+        computed_test_obj.setUp(function() {
+            test.equal(test_setup.calls, 1, 'see call to test setup');
+            test.equal(computed_test_obj.window, mock_dom, 'see mock_dom');
+            test.equal(test_setup.args[0][1], mock_dom, 'see mock_dom in setup');
+            test.equal(test_setup.args[0][2], b, 'see b');
+
+            computed_test_obj.test_func_0(mock_test);
+            test.equal(test_func_0.calls, 1, 'see 0th func called');
+            test.deepEqual(test_func_0.args[0], [mock_test, mock_dom, 'there', 'guys'], 'see proper args');
+
+            computed_test_obj.test_func_1(mock_test);
+            test.equal(test_func_1.calls, 1, 'see 1st func called');
+            test.deepEqual(test_func_1.args[0], [mock_test, mock_dom, 'there', 'guys'], 'see proper args');
+
+            computed_test_obj.tearDown(function(){});
+            test.equal(test_teardown.calls, 1, 'see call to test teardown');
+            test.equal(test_teardown.args[0][1], mock_dom, 'see mock_dom in teardown');
+
+            test.done();
+        });
+
+    },
 };
 
-exports.test_setters = {
+exports.test_getters_setters = {
     setUp: function(cb) {
         this.b = require(path.join(__dirname, '../index.js'));
+        this.b.setProvides([]);
         cb();
     },
     test_set_root: function(test) {
@@ -142,6 +195,24 @@ exports.test_setters = {
         var html = 'html';
         this.b.html(html);
         test.equal(this.b._html, html, 'set html');
+        test.done();
+    },
+    test_set_provides: function(test) {
+        var provides = ['one', 'two', 'three'];
+        this.b.setProvides(provides);
+        test.deepEqual(this.b._provides, provides, 'set provides');
+        test.done()
+    },
+    test_get_provides: function(test) {
+        var provides = ['one', 'two', 'three'];
+        this.b.setProvides(provides);
+        test.deepEqual(this.b.getProvides(), provides, 'got provides');
+        test.done();
+    },
+    test_provide: function(test) {
+        var args = ['one', 'two', 'three'];
+        this.b.provide.apply(this.b, args);
+        test.deepEqual(this.b._provides, args, 'set provides');
         test.done();
     },
 };
