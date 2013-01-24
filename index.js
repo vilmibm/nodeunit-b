@@ -15,8 +15,24 @@ var b = function(opts, tests) {
 
     var setUp = tests.setUp || function(cb) { cb() };
     var tearDown = tests.tearDown || function(cb) { cb() };
+
+    // allow setting html per test object
+    if (tests.html) {
+        b.html(tests.html);
+    }
     var html = b._html;
+
+    // allow extra reqs for this test object
+    var additionalReqs = tests.requires || [];
     var reqs = b._reqs;
+
+    // allow setting of provides when setting up test obj
+    if (tests.provide) {
+        b.provide(tests.provide);
+    }
+
+    // clean up nodeunit-b properties
+    ['requires', 'provide', 'html'].forEach(function(p) { delete tests[p] });
 
     // preprocess local reqs to check for syntax errors
     if (opts.syntaxCheck) {
@@ -33,7 +49,7 @@ var b = function(opts, tests) {
 
     tests.setUp = function(cb) {
         var testcase = this;
-        jsdom.env(html, reqs, function(err, window) {
+        jsdom.env(html, _(reqs).union(additionalReqs), function(err, window) {
             testcase.window = window;
             setUp.call(testcase, cb, window, b);
         });
@@ -70,7 +86,7 @@ var b = function(opts, tests) {
 
 b.provide = function() {
     var props = _(arguments).toArray();
-    b._provides = b._provides.concat(props);
+    b._provides = _(b._provides).union(props);
 
     return b;
 };

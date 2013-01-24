@@ -50,6 +50,70 @@ exports.test_wrapping = {
         test.done();
     },
 
+    test_meta_html: function(test) {
+        this.b.html = m.create_func();
+        var test_html = '<html></html>';
+        var test_obj = {
+            html: test_html
+        };
+        var computed_test_obj = this.b(test_obj);
+        test.ok(!computed_test_obj.html, 'html property deleted');
+        test.ok(this.b.html.called, 'called html setter');
+        test.equal(this.b.html.args[0][0], test_html, 'with appropriate html');
+        test.done();
+    },
+
+    test_meta_provide: function(test) {
+        this.b.provide = m.create_func();
+        var test_provides = [1,2,3];
+        var test_obj = {
+            provide: test_provides
+        };
+        var computed_test_obj = this.b(test_obj);
+        test.ok(!computed_test_obj.provide, 'provide property deleted');
+        test.ok(this.b.provide.called, 'called .provide');
+        test.deepEqual(this.b.provide.args[0][0], test_provides, 'with appropriate provides');
+        test.done()
+    },
+
+    test_meta_additional_reqs_empty: function(test) {
+        var test_reqs = ['one', 'two'];
+        var test_obj = {
+            requires: test_reqs
+        };
+        var mock_env = m.create_func();
+        this.b.__set__('jsdom', {
+            env: mock_env
+        });
+        var computed_test_obj = this.b(test_obj);
+        test.ok(!computed_test_obj.requires, 'requires property deleted');
+        computed_test_obj.setUp(m.noop);
+        test.ok(mock_env.called, 'sanity: called env');
+        test.deepEqual(mock_env.args[0][1], test_reqs, 'see additional reqs');
+        test.done();
+    },
+
+    test_meta_additional_reqs_nonempty: function(test) {
+        var test_reqs = ['two', 'three'];
+        this.b.require([
+            'one',
+            'two',
+        ]);
+        var test_obj = {
+            requires: test_reqs
+        };
+        var mock_env = m.create_func();
+        this.b.__set__('jsdom', {
+            env: mock_env
+        });
+        var computed_test_obj = this.b({syntaxCheck:false}, test_obj);
+        test.ok(!computed_test_obj.requires, 'requires property deleted');
+        computed_test_obj.setUp(m.noop);
+        test.ok(mock_env.called, 'sanity: called env');
+        test.deepEqual(mock_env.args[0][1], ['one', 'two', 'three'], 'see additional reqs');
+        test.done();
+    },
+
     test_just_tests: function(test) {
         var mock_test = m.create_mock();
         var mock_dom = m.create_mock();
