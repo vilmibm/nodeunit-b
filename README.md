@@ -26,14 +26,14 @@ than node and a few libraries (ie, no browser).
 
         // wrap your test object
         exports.test_all_the_things = b({
+            // make these properties of window conveniently available to tests
+            provide: ['$', '_', 'myLib'],
             setUp: function(cb, w, b) {
                 // w is a window object with a document attached
                 // b is still b
 
                 // mock out jquery.ajax
                 w.$.ajax = function() { };
-                // make these conveniently available to tests
-                w.provide('$', '_', 'myLib');
                 cb();
             },
             tearDown: function(cb, w, b) [
@@ -75,6 +75,23 @@ disable the automatic syntax checking of your require()d files. For example,
         exports.test_foo = b({syntaxCheck:false}, {
             test_bar: function(test) { }
         });
+
+When wrapping a test object you may specify useful meta options:
+
+         b({
+            html: 'raw html or a filename',
+            provide: ['prop0', 'prop1'],
+            requires: ['filename0', 'filename1'],
+
+            setUp...
+            test...
+         });
+
+ * html (equivalent to a call to `b.html`, but set per-test object).
+ * provide (equivalent to a call to `b.provide`)
+ * requires (equivalent to a call to `b.require`. unions with existing, module level requires)
+
+These options will be stripped from the test object that nodeunit handles.
 
 **setRequireRoot**
 
@@ -124,6 +141,9 @@ Be careful of masking, say, a nodejs underscore running in your tests vs. a
 window._ running in your front-end code.
 
 ## Changelog
+
+2.1.0
+    * meta options feature
 
 2.0.0
  * `provide` feature
