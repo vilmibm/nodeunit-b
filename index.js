@@ -1,5 +1,5 @@
-var path = require('path');
 var fs = require('fs');
+var path = require('path');
 var vm = require('vm');
 
 var jsdom = require('jsdom');
@@ -12,6 +12,11 @@ var b = function(opts, tests) {
             syntaxCheck: true
         }
     }
+    else {
+        if (_(opts.syntaxCheck).isUndefined()) {
+            opts.syntaxCheck = true;
+        }
+    }
 
     var setUp = tests.setUp || function(cb) { cb() };
     var tearDown = tests.tearDown || function(cb) { cb() };
@@ -20,16 +25,14 @@ var b = function(opts, tests) {
     if (tests.html) {
         b.html(tests.html);
     }
-    var html = b._html;
+    var html = b.html;
 
     // allow extra reqs for this test object
     var additionalReqs = tests.requires || [];
-    var reqs = b._reqs;
+    var reqs = b.reqs;
 
-    // allow setting of provides when setting up test obj
-    if (tests.provide) {
-        b.provide(tests.provide);
-    }
+    // argument providing
+    var provides = tests.provide || [];
 
     // clean up nodeunit-b properties
     ['requires', 'provide', 'html'].forEach(function(p) { delete tests[p] });
@@ -37,6 +40,10 @@ var b = function(opts, tests) {
     // preprocess local reqs to check for syntax errors
     if (opts.syntaxCheck) {
         _(reqs).each(function(filename) {
+            if (!fs.existsSync(filename)) {
+                throw 'Local file does not exist: ' + filename
+            }
+
             var code = fs.readFileSync(filename).toString();
 
             try {
@@ -50,47 +57,36 @@ var b = function(opts, tests) {
     tests.setUp = function(cb) {
         var testcase = this;
         jsdom.env(html, _(reqs).union(additionalReqs), function(err, window) {
+            if (err) {
+                throw 'JSDom error: ' + err
+            }
             testcase.window = window;
             setUp.call(testcase, cb, window, b);
         });
     };
 
-    tests.tearDown = function(cb) {
-        var wrapped_cb = function() {
-            // clear provides each time through so they're clear after the last
-            // run.
-            b.setProvides([]);
-            cb();
-        };
-        tearDown.call(this, wrapped_cb, this.window, b);
-    };
-
     // set up test methods
     _(tests).chain()
         .functions()
-        .filter(function(funcName) {
-            return funcName.match(/^test/i);
-        })
+        .filter(function(funcName) { return funcName.match(/^test/i); })
         .each(function(funcName) {
             var func = tests[funcName];
             tests[funcName] = function(test) {
                 var w = this.window;
                 var args = [test, w];
-                var provide_args = b.getProvides().map(function(p) { return w[p] });
+                var provide_args = provides.map(function(p) { return w[p] });
                 return func.apply(this, args.concat(provide_args));
             };
         });
+
+    tests.tearDown = function(cb) {
+        tearDown.call(this, cb, this.window, b);
+    };
 
     return tests;
 };
 
 _(b).extend({
-    provides: [],
-    provide: function() {
-        b.provides = _(b.provides).union( _(arguments).toArray() );
-        return b;
-    },
-
     root: './',
     setRequireRoot: function() {
         b.root = path.join.apply(path, _(arguments).toArray());
