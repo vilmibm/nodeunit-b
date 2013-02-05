@@ -84,49 +84,36 @@ var b = function(opts, tests) {
     return tests;
 };
 
-b.provide = function() {
-    var props = _(arguments).toArray();
-    b._provides = _(b._provides).union(props);
+_(b).extend({
+    provides: [],
+    provide: function() {
+        b.provides = _(b.provides).union( _(arguments).toArray() );
+        return b;
+    },
 
-    return b;
-};
-b.getProvides = function() {
-    return b._provides;
-};
-b.setProvides = function(propertyList) {
-    b._provides = propertyList;
-};
-b._provides = [];
+    root: './',
+    setRequireRoot: function() {
+        b.root = path.join.apply(path, _(arguments).toArray());
+        return b;
+    },
+    reqs: [],
+    require: function(reqs) {
+        if (_(reqs).isString()) { reqs = [reqs]; }
+        _(reqs).each(function(req) {
+            if (!req.match(new RegExp('^'+path.sep))) {
+                req = path.join(b.root, req);
+            }
+            b._reqs.push(req);
+        });
 
-b._root = './';
-b.setRequireRoot = function() {
-    var args = _.toArray(arguments);
-    b._root = path.join.apply(path, args);
+        return b;
+    },
+    _html = '<html><head></head><body></body></html>',
+});
 
-    return b;
-};
-
-b._html = '<html><head></head><body></body></html>';
-b.html = function(html) {
-    b._html = html;
-
-    return b;
-};
-
-b._reqs = [];
-b.require = function(reqs) {
-    if (_(reqs).isString()) {
-        reqs = [reqs];
-    }
-    _(reqs).each(function(req) {
-        if (!req.match(new RegExp('^'+path.sep))) {
-            req = path.join(b._root, req);
-        }
-        b._reqs.push(req);
-    });
-
-    return b;
-};
-
+Object.defineProperty(b, 'html', {
+    get: function() { return this._html },
+    set: function(html) { this._html = html; return b }
+});
 
 module.exports = b;
