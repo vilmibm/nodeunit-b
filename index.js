@@ -6,11 +6,11 @@ var jsdom = require('jsdom');
 var _ = require('underscore');
 
 var b = function(opts, tests) {
-    if (arguments.length == 1) {
+    if (arguments.length === 1) {
         tests = opts;
         opts = {
             syntaxCheck: true
-        }
+        };
     }
     else {
         if (_(opts.syntaxCheck).isUndefined()) {
@@ -41,7 +41,7 @@ var b = function(opts, tests) {
     if (opts.syntaxCheck) {
         _(reqs).each(function(filename) {
             if (!fs.existsSync(filename)) {
-                throw 'Local file does not exist: ' + filename
+                throw 'Local file does not exist: ' + filename;
             }
 
             var code = fs.readFileSync(filename).toString();
@@ -89,22 +89,23 @@ var b = function(opts, tests) {
 _(b).extend({
     root: './',
     setRequireRoot: function() {
-        b.root = path.join.apply(path, _(arguments).toArray());
-        return b;
+        this.root = path.join.apply(path, _(arguments).toArray());
+        return this;
     },
     reqs: [],
     require: function(reqs) {
         if (_(reqs).isString()) { reqs = [reqs]; }
+        var self = this;
         _(reqs).each(function(req) {
             if (!req.match(new RegExp('^'+path.sep))) {
                 req = path.join(b.root, req);
             }
-            b._reqs.push(req);
+            self.reqs.push(req);
         });
 
-        return b;
+        return this;
     },
-    _html = '<html><head></head><body></body></html>',
+    _html: '<html><head></head><body></body></html>',
 });
 
 Object.defineProperty(b, 'html', {

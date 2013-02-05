@@ -21,7 +21,7 @@ exports.test_wrapping = {
             })
         };
         b.__set__('fs', mock_fs);
-        b._reqs = ['bogus', 'yup'];
+        b.reqs = ['bogus', 'yup'];
         test.doesNotThrow(function() {
             b(tests);
         });
@@ -41,7 +41,7 @@ exports.test_wrapping = {
             })
         };
         b.__set__('fs', mock_fs);
-        b._reqs = ['bogus', 'yup'];
+        b.reqs = ['bogus', 'yup'];
         test.throws(function() {
             b(tests);
         });
@@ -64,10 +64,14 @@ exports.test_wrapping = {
     },
 
     test_meta_provide: function(test) {
-        this.b.provide = m.create_func();
+        var mock_jsdom = {
+            // TODO
+        };
+        this.b.__set__({jsdom: mock_jsdom});
         var test_provides = [1,2,3];
         var test_obj = {
-            provide: test_provides
+            provide: test_provides,
+            test_func: null // TODO
         };
         var computed_test_obj = this.b(test_obj);
         test.ok(!computed_test_obj.provide, 'provide property deleted');
@@ -246,39 +250,20 @@ exports.test_wrapping = {
 exports.test_getters_setters = {
     setUp: function(cb) {
         this.b = require(path.join(__dirname, '../index.js'));
-        this.b.setProvides([]);
         cb();
     },
     test_set_root: function(test) {
         var root = '../../';
         this.b.setRequireRoot(root);
-        test.equal(this.b._root, root, 'set root');
+        test.equal(this.b.root, root, 'set root');
         test.done();
     },
     test_set_html: function(test) {
         var html = 'html';
         this.b.html(html);
-        test.equal(this.b._html, html, 'set html');
+        test.equal(this.b.html, html, 'set html');
         test.done();
-    },
-    test_set_provides: function(test) {
-        var provides = ['one', 'two', 'three'];
-        this.b.setProvides(provides);
-        test.deepEqual(this.b._provides, provides, 'set provides');
-        test.done()
-    },
-    test_get_provides: function(test) {
-        var provides = ['one', 'two', 'three'];
-        this.b.setProvides(provides);
-        test.deepEqual(this.b.getProvides(), provides, 'got provides');
-        test.done();
-    },
-    test_provide: function(test) {
-        var args = ['one', 'two', 'three'];
-        this.b.provide.apply(this.b, args);
-        test.deepEqual(this.b._provides, args, 'set provides');
-        test.done();
-    },
+    }
 };
 
 exports.test_requiring = {
@@ -287,13 +272,13 @@ exports.test_requiring = {
         cb();
     },
     tearDown: function(cb) {
-        this.b._reqs = [];
+        this.b.reqs = [];
         cb();
     },
     test_require_one: function(test) {
         var req = '/requirement';
         this.b.require(req);
-        test.deepEqual(this.b._reqs, [req], 'see single req in reqs');
+        test.deepEqual(this.b.reqs, [req], 'see single req in reqs');
         test.done()
     },
     test_additive: function(test) {
@@ -301,7 +286,7 @@ exports.test_requiring = {
         var req_two = ['/req1', '/req2'];
         this.b.require(req_one);
         this.b.require(req_two);
-        var computed_reqs = this.b._reqs;
+        var computed_reqs = this.b.reqs;
         test.equal(_(computed_reqs).difference(req_two.concat([req_one])), 0, 'got all reqs, unchanged');
         test.done();
     },
@@ -311,7 +296,7 @@ exports.test_requiring = {
             '/what/is/the/haps',
         ];
         this.b.require(reqs);
-        var computed_reqs = this.b._reqs;
+        var computed_reqs = this.b.reqs;
         test.equal(computed_reqs.length, 2, 'see 2 reqs');
         test.equal(_(computed_reqs).difference(reqs).length, 0, 'got all reqs, unchanged');
         test.done()
@@ -324,7 +309,7 @@ exports.test_requiring = {
         var root = '../';
         this.b.setRequireRoot(root);
         this.b.require(reqs);
-        var computed_reqs = this.b._reqs;
+        var computed_reqs = this.b.reqs;
         test.equal(_(computed_reqs).difference(
             _(reqs).map(function(s) { return root + s })
         ).length, 0, 'see computed paths');
