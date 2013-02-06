@@ -106,11 +106,15 @@ _(b).extend({
         return this;
     },
     _html: '<html><head></head><body></body></html>',
-});
-
-Object.defineProperty(b, 'html', {
-    get: function() { return this._html },
-    set: function(html) { this._html = html; return b }
+    html: function(h) {
+        if (h) {
+            this._html = h;
+            return this;
+        }
+        else {
+            return this._html;
+        }
+    }
 });
 
 module.exports = b;

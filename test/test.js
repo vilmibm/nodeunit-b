@@ -14,6 +14,7 @@ exports.test_wrapping = {
         var b = this.b;
         var tests = {};
         var mock_fs = {
+            existsSync: m.create_func({return_value: true}),
             readFileSync: m.create_func({
                 return_value: {
                     toString: m.create_func({return_value: 'var a = function() {};'})
@@ -34,6 +35,7 @@ exports.test_wrapping = {
         var b = this.b;
         var tests = {};
         var mock_fs = {
+            existsSync: m.create_func({return_value: true}),
             readFileSync: m.create_func({
                 return_value: {
                     toString: m.create_func({return_value: 'var a = funtion() {};'})
@@ -64,19 +66,30 @@ exports.test_wrapping = {
     },
 
     test_meta_provide: function(test) {
+        var mock_window = {
+            one: 1,
+            two: 2,
+            three: 3
+        };
         var mock_jsdom = {
-            // TODO
+            env: function(html, reqs, cb) { cb(); }
         };
         this.b.__set__({jsdom: mock_jsdom});
-        var test_provides = [1,2,3];
+        var test_provides = ['one','two','three'];
         var test_obj = {
             provide: test_provides,
-            test_func: null // TODO
+            test_func0: function(t, w, one, two, three) {
+                test.equal(one, 1, 'see 1st provided arg');
+                test.equal(two, 2, 'see 2nd provided arg');
+                test.equal(three, 3, 'see 3rd provided arg');
+
+            }
         };
         var computed_test_obj = this.b(test_obj);
         test.ok(!computed_test_obj.provide, 'provide property deleted');
-        test.ok(this.b.provide.called, 'called .provide');
-        test.deepEqual(this.b.provide.args[0][0], test_provides, 'with appropriate provides');
+        computed_test_obj.test_func0.call({
+            window: mock_window
+        }, {});
         test.done()
     },
 
@@ -192,59 +205,7 @@ exports.test_wrapping = {
 
             test.done();
         });
-    },
-
-    test_with_provides: function(test) {
-        var b = this.b;
-        var mock_test = m.create_mock();
-        var mock_dom = m.create_mock();
-        var mock_env = m.create_func({func:function(html, reqs, cb) {
-            cb(null, mock_dom);
-        }});
-        mock_dom.hi = 'there';
-        mock_dom.you = 'guys';
-        b.__set__('jsdom', { env: mock_env, });
-        var test_func_0 = m.create_func();
-        var test_func_1 = m.create_func();
-        var test_setup = m.create_func({func:function(cb, w, b){
-            b.provide('hi', 'you');
-            cb();
-        }});
-        var test_teardown = m.create_func({func:function(cb){cb();}});
-        var test_obj = {
-            setUp: test_setup,
-            tearDown: test_teardown,
-            test_func_0: test_func_0,
-            test_func_1: test_func_1
-        };
-
-        var computed_test_obj = b(test_obj);
-
-        test.ok(_(computed_test_obj).has('setUp'), 'setUp retained');
-        test.ok(_(computed_test_obj).has('tearDown'), 'tearDown retained');
-
-        computed_test_obj.setUp(function() {
-            test.equal(test_setup.calls, 1, 'see call to test setup');
-            test.equal(computed_test_obj.window, mock_dom, 'see mock_dom');
-            test.equal(test_setup.args[0][1], mock_dom, 'see mock_dom in setup');
-            test.equal(test_setup.args[0][2], b, 'see b');
-
-            computed_test_obj.test_func_0(mock_test);
-            test.equal(test_func_0.calls, 1, 'see 0th func called');
-            test.deepEqual(test_func_0.args[0], [mock_test, mock_dom, 'there', 'guys'], 'see proper args');
-
-            computed_test_obj.test_func_1(mock_test);
-            test.equal(test_func_1.calls, 1, 'see 1st func called');
-            test.deepEqual(test_func_1.args[0], [mock_test, mock_dom, 'there', 'guys'], 'see proper args');
-
-            computed_test_obj.tearDown(function(){});
-            test.equal(test_teardown.calls, 1, 'see call to test teardown');
-            test.equal(test_teardown.args[0][1], mock_dom, 'see mock_dom in teardown');
-
-            test.done();
-        });
-
-    },
+    }
 };
 
 exports.test_getters_setters = {
@@ -261,7 +222,7 @@ exports.test_getters_setters = {
     test_set_html: function(test) {
         var html = 'html';
         this.b.html(html);
-        test.equal(this.b.html, html, 'set html');
+        test.equal(this.b.html(), html, 'set html');
         test.done();
     }
 };
