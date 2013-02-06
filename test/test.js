@@ -53,15 +53,18 @@ exports.test_wrapping = {
     },
 
     test_meta_html: function(test) {
-        this.b.html = m.create_func();
+        var mock_jsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mock_jsdom});
         var test_html = '<html></html>';
         var test_obj = {
             html: test_html
         };
         var computed_test_obj = this.b(test_obj);
+        computed_test_obj.setUp(function() {});
         test.ok(!computed_test_obj.html, 'html property deleted');
-        test.ok(this.b.html.called, 'called html setter');
-        test.equal(this.b.html.args[0][0], test_html, 'with appropriate html');
+        test.equal(mock_jsdom.env.args[0][0], test_html, 'see right html');
         test.done();
     },
 

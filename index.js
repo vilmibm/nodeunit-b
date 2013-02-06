@@ -25,7 +25,7 @@ var b = function(opts, tests) {
     if (tests.html) {
         b.html(tests.html);
     }
-    var html = b.html;
+    var html = b.html();
 
     // allow extra reqs for this test object
     var additionalReqs = tests.requires || [];
