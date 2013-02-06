@@ -95,8 +95,8 @@ When wrapping a test object you may specify useful meta options:
  * provide
   * makes the given properties of `window` available to test functions. for example:
 
-          provide: ['$', '_'],
-          test_foo: function(test, w, $, _) { ... }
+              provide: ['$', '_'],
+              test_foo: function(test, w, $, _) { ... }
 
   * Be careful of masking, say, a nodejs underscore running in your tests with a window.\_ running in your front-end code.
  * requires
@@ -141,13 +141,14 @@ Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 ## Changelog
 
 3.0.0
-    * remove b.provide in favor of meta provide
-    * proper error on local file-not-found
-    * improve test suite
-    * slightly change .html()'s behavior
+ * remove b.provide in favor of meta provide
+ * proper error on local file-not-found
+ * improve test suite
+ * slightly change .html()'s behavior
 
 2.1.0
-    * meta options feature
+ 
+ * meta options feature
 
 2.0.0
  * `provide` feature
