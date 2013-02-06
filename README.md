@@ -24,6 +24,9 @@ than node and a few libraries (ie, no browser).
             'lib_i_want_to_test.js' // provides, say, window.myLib
         ]);
 
+        // use some html for all test objects' DOMs
+        b.html('test.hml');
+
         // wrap your test object
         exports.test_all_the_things = b({
             // make these properties of window conveniently available to tests
@@ -87,11 +90,19 @@ When wrapping a test object you may specify useful meta options:
             test...
          });
 
- * html (equivalent to a call to `b.html`, but set per-test object).
- * provide (equivalent to a call to `b.provide`)
- * requires (equivalent to a call to `b.require`. unions with existing, module level requires)
+ * html
+  * sets html for DOM on a test-object basis.
+ * provide
+  * makes the given properties of `window` available to test functions. for example:
 
-These options will be stripped from the test object that nodeunit handles.
+          provide: ['$', '_'],
+          test_foo: function(test, w, $, _) { ... }
+
+  * Be careful of masking, say, a nodejs underscore running in your tests with a window.\_ running in your front-end code.
+ * requires
+  * equivalent to a call to `b.require`. unions with existing, test file level requires
+
+These options will be stripped from the test object that nodeunit is provided.
 
 **setRequireRoot**
 
@@ -119,28 +130,21 @@ Inject a dependency into the DOM.
 
 **html**
 
-        b.html('<html class="ie"></html>');
+        b.html('<html class="ie"></html>'); // set
+        b.html(); // get
 
 Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 
         <html><head></head><body></body></html>
 
-**provide**
-
-        b.provide('$', '_');
-
-Called within a setUp. Makes the named properties of window available as named
-parameters to test functions. If you've called `b.provide('$', '_', 'myLib');
-in your test object's setUp then you can write a test function like so:
-
-        test_foo: function(test, w, $, _, myLib) {
-            // $, _, myLib are all in scope for this test.
-        }
-
-Be careful of masking, say, a nodejs underscore running in your tests vs. a
-window._ running in your front-end code.
 
 ## Changelog
+
+3.0.0
+    * remove b.provide in favor of meta provide
+    * proper error on local file-not-found
+    * improve test suite
+    * slightly change .html()'s behavior
 
 2.1.0
     * meta options feature
