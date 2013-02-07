@@ -141,6 +141,7 @@ Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
 ## Changelog
 
 3.0.0
+
  * remove b.provide in favor of meta provide
  * proper error on local file-not-found
  * improve test suite
@@ -151,18 +152,22 @@ Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
  * meta options feature
 
 2.0.0
+
  * `provide` feature
  * backwards compat brokenish, hence major version
 
 1.1.0
+
  * syntax checking
 
 1.0.1
+
  * slight improvement to setRequireRoot.
  * fluent interface
  * doc clarification
 
 1.0.0
+
  * it works
 
 ## Author
