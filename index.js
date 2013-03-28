@@ -5,7 +5,8 @@ vm = require('vm');
 var jsdom = require('jsdom'),
 _ = require('underscore');
 
-var constants = require('./constants');
+var constants = require('./constants'),
+env = require('./envs');
 
 var extractMeta = function(testObj) {
     return _(testObj).defaults(constants.METADEFAULTS);
@@ -15,6 +16,7 @@ var b = function(testObj) {
     testObj = extractMeta(testObj);
     var setUp = testObj.setUp;
     var tearDown = testObj.tearDown;
+    var env = env(testObj.backend);
 
     // allow extra injects for this test object
     var additionalInjects = testObj.injects;
@@ -42,7 +44,7 @@ var b = function(testObj) {
 
     testObj.setUp = function(cb) {
         var testcase = this;
-        jsdom.env(testObj.html, _(injects).union(additionalInjects), function(err, window) {
+        env(testObj.html, _(injects).union(additionalInjects), function(err, window) {
             if (err) {
                 throw 'JSDom error: ' + err
             }
