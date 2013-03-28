@@ -1,45 +1,31 @@
-var fs = require('fs');
-var path = require('path');
-var vm = require('vm');
+var fs = require('fs'),
+path = require('path');
+vm = require('vm');
 
-var jsdom = require('jsdom');
-var _ = require('underscore');
+var jsdom = require('jsdom'),
+_ = require('underscore');
 
-var b = function(opts, tests) {
-    if (arguments.length === 1) {
-        tests = opts;
-        opts = {
-            syntaxCheck: true
-        };
-    }
-    else {
-        if (_(opts.syntaxCheck).isUndefined()) {
-            opts.syntaxCheck = true;
-        }
-    }
+var constants = require('./constants');
 
-    var setUp = tests.setUp || function(cb) { cb() };
-    var tearDown = tests.tearDown || function(cb) { cb() };
+var extractMeta = function(testObj) {
+    return _(testObj).defaults(constants.METADEFAULTS);
+};
 
-    // allow setting html per test object
-    if (tests.html) {
-        b.html(tests.html);
-    }
-    var html = b.html();
+var b = function(testObj) {
+    testObj = extractMeta(testObj);
+    var setUp = testObj.setUp;
+    var tearDown = testObj.tearDown;
 
-    // allow extra reqs for this test object
-    var additionalReqs = tests.requires || [];
-    var reqs = b.reqs;
+    // allow extra injects for this test object
+    var additionalInjects = testObj.injects;
+    var injects = b.injects;
 
     // argument providing
-    var provides = tests.provide || [];
+    var provides = testObj.provide;
 
-    // clean up nodeunit-b properties
-    ['requires', 'provide', 'html'].forEach(function(p) { delete tests[p] });
-
-    // preprocess local reqs to check for syntax errors
-    if (opts.syntaxCheck) {
-        _(reqs).each(function(filename) {
+    // preprocess local injects to check for syntax errors
+    if (testObj.syntaxCheck) {
+        _(injects).each(function(filename) {
             if (!fs.existsSync(filename)) {
                 throw 'Local file does not exist: ' + filename;
             }
@@ -54,9 +40,9 @@ var b = function(opts, tests) {
         });
     }
 
-    tests.setUp = function(cb) {
+    testObj.setUp = function(cb) {
         var testcase = this;
-        jsdom.env(html, _(reqs).union(additionalReqs), function(err, window) {
+        jsdom.env(testObj.html, _(injects).union(additionalInjects), function(err, window) {
             if (err) {
                 throw 'JSDom error: ' + err
             }
@@ -66,12 +52,12 @@ var b = function(opts, tests) {
     };
 
     // set up test methods
-    _(tests).chain()
+    _(testObj).chain()
         .functions()
         .filter(function(funcName) { return funcName.match(/^test/i); })
         .each(function(funcName) {
-            var func = tests[funcName];
-            tests[funcName] = function(test) {
+            var func = testObj[funcName];
+            testObj[funcName] = function(test) {
                 var w = this.window;
                 var args = [test, w];
                 var provide_args = provides.map(function(p) { return w[p] });
@@ -79,41 +65,30 @@ var b = function(opts, tests) {
             };
         });
 
-    tests.tearDown = function(cb) {
+    testObj.tearDown = function(cb) {
         tearDown.call(this, cb, this.window, b);
     };
 
-    return tests;
+    return testObj;
 };
 
 _(b).extend({
-    root: './',
-    setRequireRoot: function() {
+    root: constants.injectRoot,
+    setInjectRoot: function() {
         this.root = path.join.apply(path, _(arguments).toArray());
         return this;
     },
-    reqs: [],
-    require: function(reqs) {
-        if (_(reqs).isString()) { reqs = [reqs]; }
-        var self = this;
-        _(reqs).each(function(req) {
-            if (!req.match(new RegExp('^'+path.sep))) {
-                req = path.join(b.root, req);
+    injects: [],
+    inject: function(injects) {
+        if (_(injects).isString()) { injects = [injects]; }
+        _(injects).each(function(injection) {
+            if (!injection.match(new RegExp('^'+path.sep))) {
+                injection = path.join(b.root, injection);
             }
-            self.reqs.push(req);
-        });
+            this.injects.push(injection);
+        }.bind(this));
 
         return this;
-    },
-    _html: '<html><head></head><body></body></html>',
-    html: function(h) {
-        if (h) {
-            this._html = h;
-            return this;
-        }
-        else {
-            return this._html;
-        }
     }
 });
 

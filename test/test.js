@@ -1,70 +1,35 @@
 var path = require('path');
-var m = require('akeley');
-var rewire = require('rewire');
-var _ = require('underscore');
 
+var m = require('akeley'),
+rewire = require('rewire'),
+_ = require('underscore');
 
-exports.test_wrapping = {
+var METADEFAULTS = require('../constants').METADEFAULTS;
+
+exports.testMeta = {
     setUp: function(cb) {
         this.b = rewire(path.join(__dirname, '../index.js'));
         cb();
     },
-
-    test_syntax_check_ok: function(test) {
-        var b = this.b;
-        var tests = {};
-        var mock_fs = {
-            existsSync: m.create_func({return_value: true}),
-            readFileSync: m.create_func({
-                return_value: {
-                    toString: m.create_func({return_value: 'var a = function() {};'})
-                }
-            })
-        };
-        b.__set__('fs', mock_fs);
-        b.reqs = ['bogus', 'yup'];
-        test.doesNotThrow(function() {
-            b(tests);
-        });
-        test.equal(mock_fs.readFileSync.calls, 2, 'read two files');
-
+    testSeeAllKeys: function(test) {
+        var testObj = {};
+        var wrapped = this.b(testObj);
+        var difference = _.difference(_(METADEFAULTS).keys(), _(wrapped).keys());
+        test.ok(difference.length === 0, 'see all meta keys inserted');
         test.done();
     },
-
-    test_syntax_check_fail: function(test) {
-        var b = this.b;
-        var tests = {};
-        var mock_fs = {
-            existsSync: m.create_func({return_value: true}),
-            readFileSync: m.create_func({
-                return_value: {
-                    toString: m.create_func({return_value: 'var a = funtion() {};'})
-                }
-            })
-        };
-        b.__set__('fs', mock_fs);
-        b.reqs = ['bogus', 'yup'];
-        test.throws(function() {
-            b(tests);
-        });
-        test.equal(mock_fs.readFileSync.calls, 1, 'read one file');
-
-        test.done();
-    },
-
-    test_meta_html: function(test) {
-        var mock_jsdom = {
+    testMetaHtml: function(test) {
+        var mockJsdom = {
             env: m.create_func({func:function(h, r, cb) { cb(); }})
         };
-        this.b.__set__({jsdom: mock_jsdom});
-        var test_html = '<html></html>';
-        var test_obj = {
-            html: test_html
+        this.b.__set__({jsdom: mockJsdom});
+        var testHtml = '<html></html>';
+        var testObj = {
+            html: testHtml
         };
-        var computed_test_obj = this.b(test_obj);
-        computed_test_obj.setUp(function() {});
-        test.ok(!computed_test_obj.html, 'html property deleted');
-        test.equal(mock_jsdom.env.args[0][0], test_html, 'see right html');
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.equal(mockJsdom.env.args[0][0], testHtml, 'see right html');
         test.done();
     },
 
@@ -89,55 +54,103 @@ exports.test_wrapping = {
             }
         };
         var computed_test_obj = this.b(test_obj);
-        test.ok(!computed_test_obj.provide, 'provide property deleted');
         computed_test_obj.test_func0.call({
             window: mock_window
         }, {});
         test.done()
     },
 
-    test_meta_additional_reqs_empty: function(test) {
-        var test_reqs = ['one', 'two'];
+    test_meta_additional_injects_empty: function(test) {
+        var test_injects = ['one', 'two'];
         var test_obj = {
-            requires: test_reqs
+            injects: test_injects
         };
         var mock_env = m.create_func();
         this.b.__set__('jsdom', {
             env: mock_env
         });
         var computed_test_obj = this.b(test_obj);
-        test.ok(!computed_test_obj.requires, 'requires property deleted');
         computed_test_obj.setUp(m.noop);
         test.ok(mock_env.called, 'sanity: called env');
-        test.deepEqual(mock_env.args[0][1], test_reqs, 'see additional reqs');
+        test.deepEqual(mock_env.args[0][1], test_injects, 'see additional injects');
         test.done();
     },
 
-    test_meta_additional_reqs_nonempty: function(test) {
-        var test_reqs = ['two', 'three'];
-        this.b.require([
+    test_meta_additional_injects_nonempty: function(test) {
+        var test_injects = ['two', 'three'];
+        this.b.inject([
             'one',
             'two',
         ]);
         var test_obj = {
-            requires: test_reqs
+            syntaxCheck: false,
+            injects: test_injects
         };
         var mock_env = m.create_func();
         this.b.__set__('jsdom', {
             env: mock_env
         });
-        var computed_test_obj = this.b({syntaxCheck:false}, test_obj);
-        test.ok(!computed_test_obj.requires, 'requires property deleted');
+        var computed_test_obj = this.b(test_obj);
         computed_test_obj.setUp(m.noop);
         test.ok(mock_env.called, 'sanity: called env');
-        test.deepEqual(mock_env.args[0][1], ['one', 'two', 'three'], 'see additional reqs');
+        test.deepEqual(mock_env.args[0][1], ['one', 'two', 'three'], 'see additional injects');
+        test.done();
+    },
+
+};
+
+exports.test_wrapping = {
+    setUp: function(cb) {
+        this.b = rewire(path.join(__dirname, '../index.js'));
+        cb();
+    },
+
+    test_syntax_check_ok: function(test) {
+        var b = this.b;
+        var tests = {};
+        var mock_fs = {
+            existsSync: m.create_func({return_value: true}),
+            readFileSync: m.create_func({
+                return_value: {
+                    toString: m.create_func({return_value: 'var a = function() {};'})
+                }
+            })
+        };
+        b.__set__('fs', mock_fs);
+        b.injects = ['bogus', 'yup'];
+        test.doesNotThrow(function() {
+            b(tests);
+        });
+        test.equal(mock_fs.readFileSync.calls, 2, 'read two files');
+
+        test.done();
+    },
+
+    test_syntax_check_fail: function(test) {
+        var b = this.b;
+        var tests = {};
+        var mock_fs = {
+            existsSync: m.create_func({return_value: true}),
+            readFileSync: m.create_func({
+                return_value: {
+                    toString: m.create_func({return_value: 'var a = funtion() {};'})
+                }
+            })
+        };
+        b.__set__('fs', mock_fs);
+        b.injects = ['bogus', 'yup'];
+        test.throws(function() {
+            b(tests);
+        });
+        test.equal(mock_fs.readFileSync.calls, 1, 'read one file');
+
         test.done();
     },
 
     test_just_tests: function(test) {
         var mock_test = m.create_mock();
         var mock_dom = m.create_mock();
-        var mock_env = m.create_func({func:function(html, reqs, cb) {
+        var mock_env = m.create_func({func:function(html, injects, cb) {
             cb(null, mock_dom);
         }});
         this.b.__set__('jsdom', { env: mock_env, });
@@ -169,7 +182,7 @@ exports.test_wrapping = {
     test_with_setUp_tearDown: function(test) {
         var mock_test = m.create_mock();
         var mock_dom = m.create_mock();
-        var mock_env = m.create_func({func:function(html, reqs, cb) {
+        var mock_env = m.create_func({func:function(html, injects, cb) {
             cb(null, mock_dom);
         }});
         this.b.__set__('jsdom', { env: mock_env, });
@@ -211,71 +224,65 @@ exports.test_wrapping = {
     }
 };
 
-exports.test_getters_setters = {
+exports.test_setters = {
     setUp: function(cb) {
         this.b = require(path.join(__dirname, '../index.js'));
         cb();
     },
     test_set_root: function(test) {
         var root = '../../';
-        this.b.setRequireRoot(root);
+        this.b.setInjectRoot(root);
         test.equal(this.b.root, root, 'set root');
-        test.done();
-    },
-    test_set_html: function(test) {
-        var html = 'html';
-        this.b.html(html);
-        test.equal(this.b.html(), html, 'set html');
         test.done();
     }
 };
 
-exports.test_requiring = {
+exports.test_injecting = {
     setUp: function(cb) {
         this.b = require(path.join(__dirname, '../index.js'));
         cb();
     },
     tearDown: function(cb) {
-        this.b.reqs = [];
+        this.b.injects = [];
         cb();
     },
-    test_require_one: function(test) {
-        var req = '/requirement';
-        this.b.require(req);
-        test.deepEqual(this.b.reqs, [req], 'see single req in reqs');
+    test_inject_one: function(test) {
+        var inject = '/injection';
+        this.b.inject(inject);
+        test.deepEqual(this.b.injects, [inject], 'see single inject in injects');
         test.done()
     },
     test_additive: function(test) {
-        var req_one = '/req0';
-        var req_two = ['/req1', '/req2'];
-        this.b.require(req_one);
-        this.b.require(req_two);
-        var computed_reqs = this.b.reqs;
-        test.equal(_(computed_reqs).difference(req_two.concat([req_one])), 0, 'got all reqs, unchanged');
+        var inject_one = '/inject0';
+        var inject_two = ['/inject1', '/inject2'];
+        this.b.inject(inject_one);
+        this.b.inject(inject_two);
+        var computed_injects = this.b.injects;
+        test.equal(_(computed_injects).difference(inject_two.concat([inject_one])), 0, 'got all injects, unchanged');
         test.done();
     },
-    test_require_absolute: function(test) {
-        var reqs = [
+    test_inject_absolute: function(test) {
+        var injects = [
             '/hi/there',
             '/what/is/the/haps',
         ];
-        this.b.require(reqs);
-        var computed_reqs = this.b.reqs;
-        test.equal(computed_reqs.length, 2, 'see 2 reqs');
-        test.equal(_(computed_reqs).difference(reqs).length, 0, 'got all reqs, unchanged');
-        test.done()
+        this.b.inject(injects);
+        var computed_injects = this.b.injects;
+        test.equal(computed_injects.length, 2, 'see 2 injects');
+        test.equal(_(computed_injects).difference(injects).length, 0, 'got all injects, unchanged');
+        test.done();
     },
-    test_require_relative: function(test) {
-        var reqs = [
+    test_inject_relative: function(test) {
+        var injects = [
             'hi/there',
             'what/is/the/haps',
         ];
         var root = '../';
-        this.b.setRequireRoot(root);
-        this.b.require(reqs);
-        var computed_reqs = this.b.reqs;
-        test.equal(_(computed_reqs).difference(
-            _(reqs).map(function(s) { return root + s })
+        this.b.setInjectRoot(root);
+        this.b.inject(injects);
+        var computed_injects = this.b.injects;
+        test.equal(_(computed_injects).difference(
+            _(injects).map(function(s) { return root + s })
         ).length, 0, 'see computed paths');
         test.done();
     },
