@@ -1,6 +1,6 @@
 {
     "name": "nodeunit-b",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "author": "nathaniel k smith <nathanielksmith@gmail.com>",
     "description": "easily test browser javascript with nodeunit",
     "main": "./index.js",
