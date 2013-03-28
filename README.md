@@ -13,24 +13,23 @@ than node and a few libraries (ie, no browser).
 
         // you'll want to use __dirname to pin root relative to your test file.
         // arguments to setRequireRoot are run through path.join.
-        b.setRequireRoot(__dirname, '../../');
+        b.setInjectRoot(__dirname, '../../');
 
-        // front-end dependencies to require and inject into the DOM.
-        b.require([
-            // relative to where you set require root
+        // front-end dependencies to inject into the DOM.
+        b.inject([
+            // relative to where you set inject root
             // Note that these files will be checked for syntax errors.
             'jquery.js',
             'underscore.js',
             'lib_i_want_to_test.js' // provides, say, window.myLib
         ]);
 
-        // use some html for all test objects' DOMs
-        b.html('test.hml');
-
         // wrap your test object
-        exports.test_all_the_things = b({
+        exports.testAllTheThings = b({
             // make these properties of window conveniently available to tests
             provide: ['$', '_', 'myLib'],
+            // html to bootstrap sandbox DOM with
+            html: 'test.html',
             setUp: function(cb, w, b) {
                 // w is a window object with a document attached
                 // b is still b
@@ -44,7 +43,7 @@ than node and a few libraries (ie, no browser).
                 // (though w will be reset in setUp)
                 cb();
             },
-            test_thing: function(test, w, $, _, myLib) {
+            testThing: function(test, w, $, _, myLib) {
                 $('<span/>').appendTo('body').addClass('foo');
 
                 myLib.fooToBar();
@@ -67,24 +66,17 @@ than node and a few libraries (ie, no browser).
 **b**
 
         exports.test_object = b(test_object);
-        exports.test_object = b(opts, test_object);
 
 The primary function. This produces a nodeunit test object that will provide a
 DOM to setUp, tearDown, and test functions (see above code example).
-
-Currently the only supported option is `syntaxCheck`. Setting it to false will
-disable the automatic syntax checking of your require()d files. For example,
-
-        exports.test_foo = b({syntaxCheck:false}, {
-            test_bar: function(test) { }
-        });
 
 When wrapping a test object you may specify useful meta options:
 
          b({
             html: 'raw html or a filename',
             provide: ['prop0', 'prop1'],
-            requires: ['filename0', 'filename1'],
+            injects: ['filename0', 'filename1'],
+            syntaxCheck: false
 
             setUp...
             test...
@@ -99,16 +91,16 @@ When wrapping a test object you may specify useful meta options:
               test_foo: function(test, w, $, _) { ... }
 
   * Be careful of masking, say, a nodejs underscore running in your tests with a window.\_ running in your front-end code.
- * requires
-  * equivalent to a call to `b.require`. unions with existing, test file level requires
+ * injects
+  * equivalent to a call to `b.inject`. unions with existing, test file level requires
+ * syntaxCheck
+  * verifies existence and syntactical correctness of all injected files.
 
-These options will be stripped from the test object that nodeunit is provided.
+**setInjectRoot**
 
-**setRequireRoot**
+        b.setInjectRoot('../');
 
-        b.setRequireRoot('../');
-
-Set the location to which front-end requires will be relative. For example, if your test resides in:
+Set the location to which front-end injects will be relative. For example, if your test resides in:
 
         /home/nate/src/proj/static/js/myLib/tests/test.js
 
@@ -118,27 +110,22 @@ and you want to reference dependencies in `/home/nate/src/proj/static/js/`, then
 
 will set the require root to `/home/nate/src/proj/static/js/`.
 
-**require**
+**inject**
 
-        b.require(['jquery.js', 'underscore.js', 'myLib.js']);
+        b.inject(['jquery.js', 'underscore.js', 'myLib.js']);
 
 or
 
-        b.require('myLib.js');
+        b.inject('myLib.js');
 
 Inject a dependency into the DOM.
 
-**html**
-
-        b.html('<html class="ie"></html>'); // set
-        b.html(); // get
-
-Sets the HTML used to bootstrap the DOM. By default this HTML is set to:
-
-        <html><head></head><body></body></html>
-
-
 ## Changelog
+
+4.0.0
+
+ * standardize on meta options exclusively
+ * require -> inject. terminology was confusing.
 
 3.0.0
 
