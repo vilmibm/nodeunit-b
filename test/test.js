@@ -72,7 +72,7 @@ exports.testMeta = {
         var computedTestObj = this.b(testObj);
         computedTestObj.setUp(m.noop);
         test.ok(mockEnv.called, 'sanity: called env');
-        test.deepEqual(mockEnv.args[0][1], testInjects, 'see additional injects');
+        test.deepEqual(mockEnv.args[0][1].scripts, testInjects, 'see additional injects');
         test.done();
     },
 
@@ -93,9 +93,78 @@ exports.testMeta = {
         var computedTestObj = this.b(testObj);
         computedTestObj.setUp(m.noop);
         test.ok(mockEnv.called, 'sanity: called env');
-        test.deepEqual(mockEnv.args[0][1], ['one', 'two', 'three'], 'see additional injects');
+        test.deepEqual(mockEnv.args[0][1].scripts, ['one', 'two', 'three'], 'see additional injects');
         test.done();
     },
+
+    testMetaProcessScripts: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script'],
+            ProcessExternalResources : ['script'],
+            MutationEvents           : ['2.0']
+        }, 'see right configuration for script processing');
+        test.done();
+    },
+
+    testMetaFetchExternalResources: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            fetchExternalResources: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script', 'img', 'css', 'frame', 'iframe', 'link'],
+            ProcessExternalResources : false
+        }, 'see right configuration for external resource fetching');
+        test.done();
+    },
+
+    testMetaFetchExternalResourcesAndProcessScripts: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: true,
+            fetchExternalResources: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script', 'img', 'css', 'frame', 'iframe', 'link'],
+            ProcessExternalResources : ['script'],
+            MutationEvents           : ['2.0']
+        }, 'see right configuration for both external resource fetching and script execution');
+        test.done();
+    },
+
+    testMetaFetchExternalResourcesAndProcessScriptsBothFalse: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: false,
+            fetchExternalResources: false
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.equal(mockJsdom.env.args[0][1].features, null, 'see right configuration for disabling external resource fetching and script execution');
+        test.done();
+    }
 
 };
 
@@ -232,7 +301,7 @@ exports.testSetters = {
     testSetRoot: function(test) {
         var root = '../../';
         this.b.setInjectRoot(root);
-        test.equal(this.b.root, root, 'set root');
+        test.equal(path.normalize(this.b.root), path.normalize(root), 'set root');
         test.done();
     }
 };
@@ -247,14 +316,17 @@ exports.testInjecting = {
         cb();
     },
     testInjectOne: function(test) {
-        var inject = '/injection';
+        var inject = path.normalize('/injection');
         this.b.inject(inject);
         test.deepEqual(this.b.injects, [inject], 'see single inject in injects');
         test.done()
     },
     testAdditive: function(test) {
-        var injectOne = '/inject0';
-        var injectTwo = ['/inject1', '/inject2'];
+        var injectOne = path.normalize('/inject0');
+        var injectTwo = [
+            path.normalize('/inject1'),
+            path.normalize('/inject2')
+        ];
         this.b.inject(injectOne);
         this.b.inject(injectTwo);
         var computedInjects = this.b.injects;
@@ -263,8 +335,8 @@ exports.testInjecting = {
     },
     testInjectAbsolute: function(test) {
         var injects = [
-            '/hi/there',
-            '/what/is/the/haps',
+            path.normalize('/hi/there'),
+            path.normalize('/what/is/the/haps'),
         ];
         this.b.inject(injects);
         var computedInjects = this.b.injects;
@@ -274,16 +346,16 @@ exports.testInjecting = {
     },
     test_inject_relative: function(test) {
         var injects = [
-            'hi/there',
-            'what/is/the/haps',
+            path.normalize('hi/there'),
+            path.normalize('what/is/the/haps'),
         ];
         var root = '../';
         this.b.setInjectRoot(root);
         this.b.inject(injects);
         var computedInjects = this.b.injects;
         test.equal(_(computedInjects).difference(
-            _(injects).map(function(s) { return root + s })
+            _(injects).map(function(s) { return path.normalize(root + s); })
         ).length, 0, 'see computed paths');
         test.done();
-    },
+    }
 };
