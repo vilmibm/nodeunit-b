@@ -95,7 +95,7 @@ exports.testMeta = {
         test.ok(mockEnv.called, 'sanity: called env');
         test.deepEqual(mockEnv.args[0][1], ['one', 'two', 'three'], 'see additional injects');
         test.done();
-    },
+    }
 
 };
 
@@ -232,7 +232,7 @@ exports.testSetters = {
     testSetRoot: function(test) {
         var root = '../../';
         this.b.setInjectRoot(root);
-        test.equal(this.b.root, root, 'set root');
+        test.equal(path.normalize(this.b.root), path.normalize(root), 'set root');
         test.done();
     }
 };
@@ -247,14 +247,17 @@ exports.testInjecting = {
         cb();
     },
     testInjectOne: function(test) {
-        var inject = '/injection';
+        var inject = path.normalize('/injection');
         this.b.inject(inject);
         test.deepEqual(this.b.injects, [inject], 'see single inject in injects');
         test.done()
     },
     testAdditive: function(test) {
-        var injectOne = '/inject0';
-        var injectTwo = ['/inject1', '/inject2'];
+        var injectOne = path.normalize('/inject0');
+        var injectTwo = [
+            path.normalize('/inject1'),
+            path.normalize('/inject2')
+        ];
         this.b.inject(injectOne);
         this.b.inject(injectTwo);
         var computedInjects = this.b.injects;
@@ -263,8 +266,8 @@ exports.testInjecting = {
     },
     testInjectAbsolute: function(test) {
         var injects = [
-            '/hi/there',
-            '/what/is/the/haps',
+            path.normalize('/hi/there'),
+            path.normalize('/what/is/the/haps'),
         ];
         this.b.inject(injects);
         var computedInjects = this.b.injects;
@@ -274,16 +277,16 @@ exports.testInjecting = {
     },
     test_inject_relative: function(test) {
         var injects = [
-            'hi/there',
-            'what/is/the/haps',
+            path.normalize('hi/there'),
+            path.normalize('what/is/the/haps'),
         ];
         var root = '../';
         this.b.setInjectRoot(root);
         this.b.inject(injects);
         var computedInjects = this.b.injects;
         test.equal(_(computedInjects).difference(
-            _(injects).map(function(s) { return root + s })
+            _(injects).map(function(s) { return path.normalize(root + s); })
         ).length, 0, 'see computed paths');
         test.done();
-    },
+    }
 };

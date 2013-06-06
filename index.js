@@ -82,10 +82,10 @@ _(b).extend({
     inject: function(injects) {
         if (_(injects).isString()) { injects = [injects]; }
         _(injects).each(function(injection) {
-            if (!injection.match(new RegExp('^'+path.sep))) {
+            if (!injection.match(new RegExp('^\\'+path.sep))) {
                 injection = path.join(b.root, injection);
             }
-            this.injects.push(injection);
+            this.injects.push(path.normalize(injection));
         }.bind(this));
 
         return this;
