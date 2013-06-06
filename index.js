@@ -54,7 +54,7 @@ var b = function(testObj) {
     // set up test methods
     _(testObj).chain()
         .functions()
-        .filter(function(funcName) { return funcName.match(/^test/i); })
+        .filter(function(funcName) { return !funcName.match(/^(setUp|tearDown)$/); })
         .each(function(funcName) {
             var func = testObj[funcName];
             testObj[funcName] = function(test) {
