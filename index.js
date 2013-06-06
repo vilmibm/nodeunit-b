@@ -42,7 +42,29 @@ var b = function(testObj) {
 
     testObj.setUp = function(cb) {
         var testcase = this;
-        jsdom.env(testObj.html, _(injects).union(additionalInjects), function(err, window) {
+
+        // prepares the configuration for jsdom
+        var jsdomCfg = {
+            scripts: _(injects).union(additionalInjects)
+        };
+        if (testObj.processScripts) {
+            // allows execution and fetching of scripts
+            jsdomCfg.features = {
+                FetchExternalResources   : ['script'],
+                ProcessExternalResources : ['script'],
+                MutationEvents           : ['2.0']
+            };
+        }
+        if (testObj.fetchExternalResources) {
+            // allows fetching of all the external resources, but not script execution
+            jsdomCfg.features = jsdomCfg.features || {
+                ProcessExternalResources: false
+            };
+            jsdomCfg.features.FetchExternalResources = ['script', 'img', 'css', 'frame', 'iframe', 'link'];
+        }
+
+        // loads jsdom
+        jsdom.env(testObj.html, jsdomCfg, function(err, window) {
             if (err) {
                 throw 'JSDom error: ' + err
             }

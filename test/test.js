@@ -72,7 +72,7 @@ exports.testMeta = {
         var computedTestObj = this.b(testObj);
         computedTestObj.setUp(m.noop);
         test.ok(mockEnv.called, 'sanity: called env');
-        test.deepEqual(mockEnv.args[0][1], testInjects, 'see additional injects');
+        test.deepEqual(mockEnv.args[0][1].scripts, testInjects, 'see additional injects');
         test.done();
     },
 
@@ -93,7 +93,76 @@ exports.testMeta = {
         var computedTestObj = this.b(testObj);
         computedTestObj.setUp(m.noop);
         test.ok(mockEnv.called, 'sanity: called env');
-        test.deepEqual(mockEnv.args[0][1], ['one', 'two', 'three'], 'see additional injects');
+        test.deepEqual(mockEnv.args[0][1].scripts, ['one', 'two', 'three'], 'see additional injects');
+        test.done();
+    },
+
+    testMetaProcessScripts: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script'],
+            ProcessExternalResources : ['script'],
+            MutationEvents           : ['2.0']
+        }, 'see right configuration for script processing');
+        test.done();
+    },
+
+    testMetaFetchExternalResources: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            fetchExternalResources: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script', 'img', 'css', 'frame', 'iframe', 'link'],
+            ProcessExternalResources : false
+        }, 'see right configuration for external resource fetching');
+        test.done();
+    },
+
+    testMetaFetchExternalResourcesAndProcessScripts: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: true,
+            fetchExternalResources: true
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.deepEqual(mockJsdom.env.args[0][1].features, {
+            FetchExternalResources   : ['script', 'img', 'css', 'frame', 'iframe', 'link'],
+            ProcessExternalResources : ['script'],
+            MutationEvents           : ['2.0']
+        }, 'see right configuration for both external resource fetching and script execution');
+        test.done();
+    },
+
+    testMetaFetchExternalResourcesAndProcessScriptsBothFalse: function (test) {
+        var mockJsdom = {
+            env: m.create_func({func:function(h, r, cb) { cb(); }})
+        };
+        this.b.__set__({jsdom: mockJsdom});
+        var testObj = {
+            processScripts: false,
+            fetchExternalResources: false
+        };
+        var computedTestObj = this.b(testObj);
+        computedTestObj.setUp(function() {});
+        test.equal(mockJsdom.env.args[0][1].features, null, 'see right configuration for disabling external resource fetching and script execution');
         test.done();
     }
 
